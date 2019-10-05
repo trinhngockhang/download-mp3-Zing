@@ -1,0 +1,5 @@
+/node_modules/**/*.js
+/test/**/*.js
+/dist/**/*.js
+/dist_dev/**/*.js
+/src

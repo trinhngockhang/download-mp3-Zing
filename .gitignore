@@ -1,0 +1,17 @@
+node_modules
+dist
+dist_dev
+# fake_data
+
+.vscode
+logs
+
+docker-compose.local.yml
+ngrok
+
+.env
+data
+# newrelic
+newrelic_agent.log
+
+DataAccChromnium
