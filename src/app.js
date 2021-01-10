@@ -10,11 +10,87 @@ import uuidv4 from 'uuid/v4';
 import async from 'async';
 import * as shell from 'shelljs';
 // eslint-disable-next-line func-names
-const url = 'https://zingmp3.vn/bai-hat/Yeu-La-Tha-Thu-Em-Chua-18-OST-OnlyC/ZW7DAIDA.html';
+const url = 'https://zingmp3.vn/album/Chieu-Thu-Hoa-Bong-Nang-Single-DatKaa/6Z7EAIUA.html';
 
 let browser;
 let page;
 const alpha = 0;
+
+// adding comment
+
+const listComment = [
+  'Bài hát rất hay, rất ấn tượng, mình cực kỳ thích giọng bạn này',
+  'Hán chán quá, không có cảm xúc',
+  'Hay thật sự mọi người ạ',
+  'Giọng hát đầy nội lực',
+  `Mình thấy như này
+  Mấy bạn phải like cmt tương tác lẫn nhau thì người mới cmt sẽ có động lực cmt nữa
+  Like khiến con người ta chăm bình luận hơn
+  Mình nghĩ như vậy đó`,
+  'Tui xem từ nữa đêm đến giờ, hơi bị buồn đấyy nha. Chả có ai đồng hành hết :< ai động viên tui tui đi',
+  'Đừng bỏ cuộc ae!! Chỉ là bị chặn do nhiều người xem thôi!!  Cứ xem hết mình!!! ><',
+  'If you still support him and listen to his songs every day, you\'re definitely a big fan of him.',
+  'Việt nam điểm danh ,chứ t thấy hoang mang quá độc mấy bố nước ngoài comment',
+  'Nghe nói âm thầm bên em hiện đang top1 bên Lào',
+  'Nếu k có anh làm sao e biết được tình yêu có giá trị như thế',
+  `Dù thời gian có xóa phai nhòa
+  Lạc trôi những kí ức
+  Bạn tôi vẫn thế không hề đổi thay trái tim.`,
+  'Vậytạisao, tình yêumàanh đã trao..',
+  'Anhyeuem , emkhongyeuanh',
+  'Anhkhôngbiết yêuem saohovừa',
+  'Anhkhôngbiết ngọt ngàohaytrăng sao...',
+  'Lord forgive me for watching this',
+  `Ai công nhận 2019 toàn HIT hay
+  Tui chưa kịp học lời bài này thì bài kia đã ra rồi`,
+  'Fan Chuyên Cần Thích Nghe Nhạc Chill Điểm Danh Nào',
+  'SẮP ĐI LÍNH RỒI 2 NĂM NỮA VỀ MONG ĐC 1 LIKE',
+  'OMG she’s so pretty and charming',
+  'Nghe xong bài này mai đi nghĩa vụ mong 2 năm sau về được 10 like',
+  'From Indonesian❤big love for this song!',
+  'Hình như t là ng đóng góp lượt xem thứ 12M ',
+  'Khắc Hưng là 1 trong những của hiếm trong sản xuất âm nhạc hiện nay của Showbiz Việt..hâm mộ anh',
+  'Ai thấy bài này đỉnh thì like nghiện từ lần nghe đầu tiên',
+  `Bài này hay phết 
+  Thấy nó đứng top nên xem thư ải ngờ nghiện luôn`,
+  `Dù em là con mèo trắng ngu ngốc
+  Nhưng em vẫn cứ đâm đầu yêu anh`,
+  'Bài này chill phết',
+  'bài này khó quá rồi ,sao mà ai đó " co vơ " lại được',
+  'I need to know where she got the beaded floral top asap. It is totally to die for <3',
+  `Ngoài Trời Xanh Màu Lá
+  Vừa Mới Bị Bồ Đá`
+]
+const addComment = function() {
+  return new Promise(async (resolve, reject) => {
+    const sqlUserId = 'SELECT id FROM users';
+    const sqlSongId = 'SELECT id FROM songs';
+    const addCmtSql = `
+      INSERT INTO comments(id, userId, songId, content)
+      VALUES (?,?,?,?)
+    `;
+    const userIdArr = await dbUtil.query(sqlUserId);
+    const songIdArr = await dbUtil.query(sqlSongId);
+    console.log(userIdArr);
+    for(let i = 0; i< 500; i++){
+      // get user
+      const userIdRandom = userIdArr[Math.round(Math.random() * (userIdArr.length - 1))].id;
+      console.log('ran id', userIdRandom);
+      // get content
+      const commentRandom = listComment[Math.round(Math.random() * listComment.length)];
+      console.log('ran id', commentRandom);
+      // get song
+      const songRandom = songIdArr[Math.round(Math.random() * (songIdArr.length-1 ))].id;
+      console.log('song id', songRandom);
+      // insert
+      const id = uuidv4();
+      await dbUtil.execute(addCmtSql, [id, userIdRandom, songRandom, commentRandom]);
+      await sleep(500);
+    }
+  })
+}
+
+// addComment();
 const boostrap = function () {
   return new Promise(async (resolve) => {
     browser = await puppeteer.launch({
@@ -43,38 +119,29 @@ const saveInDb = async function({
   const transaction = await dbUtil.beginTransaction();
   try{
     const checkAlbum = await checkAlbumExist(album);
-    const checkSinger = await checkSingerExist(singer);
+    // album da ton tai hay chua
+    let albumExist;
     // id 
     let albumId;
-    let singerId;
+    
     let songId = uuidv4();
     // check neu co roi tang so luong bai hat
     if(checkAlbum){
       albumId = checkAlbum;
-      const inceaseNumber = 'UPDATE album SET songNumber +=1 WHERE id = = ?';
-      await dbUtil.execute(inceaseNumber, [albumId], transaction);
+      albumExist = true;
+      // const inceaseNumber = 'UPDATE album SET songNumber +=1 WHERE id = ?';
+      // await dbUtil.execute(inceaseNumber, [albumId], transaction);
     }else{
       // ko thi tao album moi
       albumId = uuidv4();
+      albumExist = false;
       if(album){
         const addAlbumSql = 'INSERT INTO album(id,name,img) VALUES(?,?,?)';
         await dbUtil.execute(addAlbumSql, [albumId, album, imgSong], transaction);
       }
     }
-    // tuong tu voi singer
-    if(checkSinger){
-      singerId = checkSinger;
-    }else{
-      // ko thi tao singer moi
-      singerId = uuidv4();
-      const addSingerSql = 'INSERT INTO singers(id,name,avatar) VALUES(?,?,?)';
-      await dbUtil.execute(addSingerSql, [singerId, singer, imgSinger], transaction);
-    }
-    // them singer_album
-    if(album){
-      const singerAlbumSql = 'INSERT IGNORE INTO singer_album(albumId,singerId) VALUES(?,?)';
-      await dbUtil.execute(singerAlbumSql, [albumId, singerId], transaction);
-    }
+    
+    
     // them categories
     for(let i = 0; i< categories.length; i++){
       console.log('checking category: ', categories[i]);
@@ -94,10 +161,31 @@ const saveInDb = async function({
     // them bai hat
     const songSql = 'INSERT INTO songs(id,name,image,length,albumId,writer,url) VALUES(?,?,?,?,?,?,?)';
     await dbUtil.execute(songSql,[songId,name,imgSong,length,albumId,writer,mp3Url], transaction);
-    // them vao singer_song
-    const singerSongSql = 'INSERT IGNORE INTO singer_song(singerId,songId) VALUES(?,?)';
-    await dbUtil.execute(singerSongSql, [singerId, songId], transaction);
-    await dbUtil.commitTransaction(transaction);
+    
+
+    for(let i = 0; i< singer.length; i++){
+      const checkSinger = await checkSingerExist(singer[i]);
+      let singerId;
+      // tuong tu voi singer
+      if(checkSinger){
+        singerId = checkSinger;
+      }else{
+        // ko thi tao singer moi
+        singerId = uuidv4();
+        const addSingerSql = 'INSERT INTO singers(id,name,avatar) VALUES(?,?,?)';
+        await dbUtil.execute(addSingerSql, [singerId, singer[i], imgSinger], transaction);
+      }
+      // them singer_album
+      if(album && !albumExist){
+        const singerAlbumSql = 'INSERT IGNORE INTO singer_album(albumId,singerId) VALUES(?,?)';
+        await dbUtil.execute(singerAlbumSql, [albumId, singerId], transaction);
+      }
+      // them vao singer_song
+      const singerSongSql = 'INSERT INTO singer_song(singerId,songId) VALUES(?,?)';
+      await dbUtil.execute(singerSongSql, [singerId, songId], transaction);
+    }
+      console.log("chuan bi commit ne");
+      await dbUtil.commitTransaction(transaction);
   }catch(e){
     console.log(e);
     await dbUtil.rollbackTransaction(transaction);
@@ -105,30 +193,44 @@ const saveInDb = async function({
 }
 const startGame = async function () {
   await page.goto(url);
-  await page.waitFor(".medium-card-11 ", {timeout: 5000});
+  await page.waitFor(".txt-primary", {timeout: 5000});
   await sleep(2000);
+  await page.evaluate(() => {
+    document.querySelector('.media-control-button.media-control-icon.paused').click()
+  })
   const data = await page.evaluate((_) => {
     let arrCategories = [];
-    const name = document.querySelector('.left-info h3').innerHTML || null;
-    const singer = document.querySelector('.artist-name a')? document.querySelector('.artist-name a').innerText : null;
-    const album = document.querySelector('.left-info .ml-5 ')? document.querySelector('.left-info .ml-5 ').innerHTML : null;
-    const writer = document.querySelector('.subtext.authors a')? document.querySelector('.subtext.authors a').innerHTML : null;
-    const numberCate = document.querySelectorAll('.subtext.category a').length || null;
-    const imgSinger = document.querySelector('.medium-circle-card a img').src || null;
-    const imgSong = document.querySelector('.medium-card-11  img').src || null;
-    const lengthRaw = document.querySelector('.z-time.z-duration-time').innerHTML || null;
-    const lengthString = lengthRaw.split('/ ')[1];
+    let arrSinger = [];
+    console.log( document.querySelector('.txt-primary'));
+    document.querySelector('.media-control-button.media-control-icon.paused').click()
+    const name = document.querySelector('.txt-primary')?  document.querySelector('.txt-primary').innerText.split('-')[0].trim() : null;
+    // get singer
+    const listSinger = document.querySelector('.txt-primary')? document.querySelector('.txt-primary') : null;
+    if(listSinger){
+      const elements = listSinger.querySelectorAll('a');
+      elements.forEach((doc) => {
+        console.log(doc);
+        arrSinger.push(doc.innerText.split(',')[0]);
+      })
+    }
+    const album = document.querySelector('.txt-info').innerText? document.querySelector('.txt-info').innerText : null;
+    const writer = document.querySelector('#composer-container')? document.querySelector('#composer-container').innerText.trim() : null;
+    const numberCate = document.querySelectorAll('.info-song-top.otr.clear a').length || null;
+    const imgSinger = document.querySelector('.box-artist img').src || null;
+    const imgSong = document.querySelector('.album-bg img').src || null;
+    const lengthRaw = document.querySelectorAll('.media-control-indicator')[1].innerText || '04:34';
+    const lengthString = lengthRaw;
     console.log(lengthString);
     const minute = lengthString.split(':')[0];
     const second = lengthString.split(':')[1];
     const length =parseInt(minute * 60) + parseInt(second);
     for(let i = 0; i < numberCate; i++ ){
-      arrCategories.push(document.querySelectorAll('.subtext.category a')[i].attributes.title.textContent);
+      arrCategories.push(document.querySelectorAll('.info-song-top.otr.clear a')[i].attributes.title.textContent);
     }
-    document.querySelector('.icon.ic-sync-white').click()
+    document.querySelectorAll('.button-style-1.pull-left.fn-tab')[1].click();
     return {
       name,
-      singer,
+      singer: arrSinger,
       album,
       writer,
       categories: arrCategories,
@@ -137,12 +239,13 @@ const startGame = async function () {
       length,
     }
   })
+  console.log("ten ca si:", data.singer);
   await sleep(1000);
-  await page.click('.z-type');
+  await page.click('.z-download-pkg-btn.fn-128.fn-tracking-download');
   await sleep(6000);
   const listTemp = await shell.exec('ls ~/Documents/Code/Project-1/Back-end_MP3_Online/Temp');
   const mp3Url = listTemp.stdout.split('\n')[0];
-  await shell.exec(`mv ~/Documents/Code/Project-1/Back-end_MP3_Online/Temp/${mp3Url} ~/Documents/Code/Project-1/Back-end_MP3_Online/MP3/`);
+  await shell.exec(`mv ~/Documents/Code/Project-1/Back-end_MP3_Online/Temp/${mp3Url} ~/Documents/Code/Project-1/download-mp3/MP3/`);
   console.log(listTemp.stdout.split('\n')[0]);
   console.log(data);
   return {...data,mp3Url};
